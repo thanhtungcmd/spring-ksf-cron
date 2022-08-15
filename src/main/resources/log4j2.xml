@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration strict="true">
+    <!-- include this to enable log4j internal debug messages: status="debug" -->
+    <appenders>
+        <appender type="Console" name="STDOUT">
+            <layout type="PatternLayout" pattern="%d %-5p %c - %m%n"/>
+        </appender>
+        <appender type="File" name="FILE" fileName="logs\all.log">
+            <layout type="PatternLayout">
+                <pattern>%d %-5p %c - %m%n</pattern>
+            </layout>
+        </appender>
+    </appenders>
+
+    <loggers>
+        <root level="info">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="STDOUT"/>
+        </root>
+    </loggers>
+
+</configuration>
