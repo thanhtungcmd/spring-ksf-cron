@@ -30,7 +30,7 @@ public class CallApi {
         return null;
     }
 
-    public static boolean callPut(String url, String token, String orderId) {
+    /*public static boolean callPut(String url, String token, String orderId) {
         try {
             OkHttpClient client = new OkHttpClient.Builder()
                     .connectTimeout(10, TimeUnit.SECONDS)
@@ -83,6 +83,6 @@ public class CallApi {
             e.printStackTrace();
         }
         return false;
-    }
+    }*/
 
 }

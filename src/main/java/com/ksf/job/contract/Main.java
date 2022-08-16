@@ -11,19 +11,16 @@ public class Main {
 
     public static void main(String[] args) {
         /*InvestOrderContract investOrderContract = new InvestOrderContract();
-        investOrderContract.exec();*/
+        investOrderContract.execAll();*/
 
-        /*InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
-        investPlusOrderContract.exec();*/
+        InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
+        investPlusOrderContract.execAll();
 
         /*BondOrderContract bondOrderContract = new BondOrderContract();
         bondOrderContract.exec();*/
 
-        InvestPlusRenderContract investPlusRenderContract = new InvestPlusRenderContract();
-        investPlusRenderContract.exec();
-
-        /*Auto auto = new Auto();
-        auto.exec();*/
+        /*InvestPlusRenderContract investPlusRenderContract = new InvestPlusRenderContract();
+        investPlusRenderContract.exec();*/
     }
 
 }

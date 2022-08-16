@@ -9,9 +9,27 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+import java.io.FileInputStream;
+import java.util.Properties;
+
 public class Auth {
 
     private static final Logger logger = LogManager.getLogger();
+
+    private String username;
+    private String password;
+
+    public Auth() {
+        Properties prop = new Properties();
+        String fileName = "app.cfg";
+        try (FileInputStream fis = new FileInputStream(fileName)) {
+            prop.load(fis);
+            username = prop.getProperty("auth.username");
+            password = prop.getProperty("auth.password");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 
     public String exec(String baseUrl, String session) {
         try {
@@ -20,8 +38,8 @@ public class Auth {
 
             driver.get(baseUrl);
             Thread.sleep(1000);
-            driver.findElement(By.xpath("//*[@id=\"Username\"]")).sendKeys("0947907199");
-            driver.findElement(By.xpath("//*[@id=\"Password\"]")).sendKeys("Muahe2022@");
+            driver.findElement(By.xpath("//*[@id=\"Username\"]")).sendKeys(username);
+            driver.findElement(By.xpath("//*[@id=\"Password\"]")).sendKeys(password);
             driver.findElement(By.xpath("/html/body/div[2]/div/div[2]/div/div[1]/section/form/div[5]/div/button")).click();
 
             Thread.sleep(1000);

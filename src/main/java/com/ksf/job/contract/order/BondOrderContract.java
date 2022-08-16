@@ -24,34 +24,48 @@ public class BondOrderContract {
 
     private final Logger logger = LogManager.getLogger();
 
-    private static String pageSize;
-    private static String offSet;
+    private static Long pageSize;
+    private static Long offSet;
     private static String filePath;
+    private static String runAll;
 
     public BondOrderContract() {
         Properties prop = new Properties();
         String fileName = "app.cfg";
         try (FileInputStream fis = new FileInputStream(fileName)) {
             prop.load(fis);
-            pageSize = prop.getProperty("bond.page_size");
-            offSet = prop.getProperty("bond.offset");
+            pageSize = Long.parseLong(prop.getProperty("bond.page_size"));
+            offSet = Long.parseLong(prop.getProperty("bond.offset"));
             filePath = prop.getProperty("file_path");
+            runAll = prop.getProperty("run_all");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public void exec() {
-        try {
-            Auth auth = new Auth();
-            String token = auth.exec(
-                    "https://ks-bond.ksfinance.net/",
-                    "oidc.user:https://api.sunshinegroup.vn:5000:web_s_sipt_prod"
-            );
+    public void execAll() {
+        Auth auth = new Auth();
+        String token = auth.exec(
+                "https://ks-bond.ksfinance.net/",
+                "oidc.user:https://api.sunshinegroup.vn:5000:web_s_sipt_prod"
+        );
 
+        boolean isLoop;
+        try {
+            do {
+                isLoop = this.exec(token);
+                offSet = offSet + pageSize;
+            } while (isLoop);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean exec(String token) {
+        try {
             // Get List
             String orderListStr = CallApi.callGet(
-                    "https://apibond.sunshinetech.com.vn/api/v1/order/GetOrderPage?branch_type=2&filter=&gridWidth=0&offSet="+ offSet +"&open_id=-1&pageSize="+ pageSize +"&prod_id=-1&work_st=-1",
+                    "https://apibond.sunshinetech.com.vn/api/v1/order/GetOrderPage?branch_type=2&filter=&gridWidth=0&offSet="+ offSet.toString() +"&open_id=-1&pageSize="+ pageSize.toString() +"&prod_id=-1&work_st=-1",
                     token
             );
             Gson gson = new Gson();
@@ -98,9 +112,16 @@ public class BondOrderContract {
                     }
                 }
             }
+
+            if (dataLists.size() > 0) {
+                logger.info("Offset"+ offSet);
+                return runAll.equals("true") ? true : false;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        return false;
     }
 
 }

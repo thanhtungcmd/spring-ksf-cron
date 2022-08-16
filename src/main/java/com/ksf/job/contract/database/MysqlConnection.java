@@ -26,9 +26,9 @@ public class MysqlConnection {
         String fileName = "app.cfg";
         try (FileInputStream fis = new FileInputStream(fileName)) {
             prop.load(fis);
-            connection = prop.getProperty("mysql_connection");
-            user = prop.getProperty("mysql_user");
-            password = prop.getProperty("mysql_password");
+            connection = prop.getProperty("mysql.connection");
+            user = prop.getProperty("mysql.user");
+            password = prop.getProperty("mysql.password");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
