@@ -38,8 +38,8 @@ public class InvestPlusOrderContract {
             offSet = Long.parseLong(prop.getProperty("invest_plus.offset"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error(e);
         }
     }
 
@@ -57,7 +57,7 @@ public class InvestPlusOrderContract {
                 offSet = offSet + pageSize;
             } while (isLoop);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -70,7 +70,7 @@ public class InvestPlusOrderContract {
                 return true;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
         return false;
     }
@@ -89,52 +89,63 @@ public class InvestPlusOrderContract {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                String orderItemString = CallApi.callGet(
-                        "https://apiinvplus.sunshinetech.com.vn/api/v2/order/GetOrderInfo?ord_id=" + item.getOrd_id(),
-                        token
-                );
-                OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
-                List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
-
-                // Get Meta
-                for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                    if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
-                        DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                        DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
-
-                        FileUtils.copyURLToFile(
-                                new URL(metaItem.getUpload_file_url()),
-                                new File(
-                                        filePath
-                                                + "Invest Plus" + "\\"
-                                                + "Hợp đồng đặt mua" + "\\"
-                                                + investDate.getYear() + "\\"
-                                                + investDate.getMonthOfYear() + "\\"
-                                                + investDate.getDayOfMonth() + "\\"
-                                                + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
-                                                + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getUpload_file_url(), metaItem.getOutput_filename())
-                                )
-                        );
-                        MysqlConnection.insertItem(
-                                metaItem.getMeta_id(),
-                                metaItem.getMeta_name(),
-                                item.getOrd_id(),
-                                metaItem.getUpload_file_url(),
-                                item.getOrd_inv_at(),
-                                "invest_plus.normal"
-                        );
-                    }
-                }
+                logger.info("Code:"+ item.getOrd_code());
+                this.hopDongDatMuaMeta(item, token);
             }
             if (dataLists.size() > 0) {
-                logger.info("Offset"+ offSet);
+                logger.info("Offset:"+ offSet);
                 return runAll.equals("true") ? true : false;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.toString());
         }
 
         return false;
+    }
+
+    public void hopDongDatMuaMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
+        try {
+            Gson gson = new Gson();
+            String orderItemString = CallApi.callGet(
+                    "https://apiinvplus.sunshinetech.com.vn/api/v2/order/GetOrderInfo?ord_id=" + item.getOrd_id(),
+                    token
+            );
+            OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
+            List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
+
+            // Get Meta
+            for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                    DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
+                    DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
+
+                    FileUtils.copyURLToFile(
+                            new URL(metaItem.getUpload_file_url()),
+                            new File(
+                                    filePath
+                                            + "Invest Plus" + "\\"
+                                            + "Hợp đồng đặt mua" + "\\"
+                                            + investDate.getYear() + "\\"
+                                            + investDate.getMonthOfYear() + "\\"
+                                            + investDate.getDayOfMonth() + "\\"
+                                            + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
+                                            + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getUpload_file_url(), metaItem.getOutput_filename())
+                            )
+                    );
+                    MysqlConnection.insertItem(
+                            metaItem.getMeta_id(),
+                            metaItem.getMeta_name(),
+                            item.getOrd_id(),
+                            metaItem.getUpload_file_url(),
+                            item.getOrd_inv_at(),
+                            "invest_plus.normal",
+                            item.getOrd_code()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e);
+        }
     }
 
     public boolean hopDongChuyenDoi(String token) {
@@ -151,52 +162,63 @@ public class InvestPlusOrderContract {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                String orderItemString = CallApi.callGet(
-                        "https://apiinvplus.sunshinetech.com.vn/api/v2/order/GetOrderInfo?ord_id=" + item.getOrd_id(),
-                        token
-                );
-                OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
-                List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
-
-                // Get Meta
-                for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                    if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
-                        DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                        DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
-
-                        FileUtils.copyURLToFile(
-                                new URL(metaItem.getUpload_file_url()),
-                                new File(
-                                        filePath
-                                                + "Invest Plus" + "\\"
-                                                + "Hợp đồng chuyển đổi" + "\\"
-                                                + investDate.getYear() + "\\"
-                                                + investDate.getMonthOfYear() + "\\"
-                                                + investDate.getDayOfMonth() + "\\"
-                                                + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
-                                                + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getUpload_file_url(), metaItem.getOutput_filename())
-                                )
-                        );
-                        MysqlConnection.insertItem(
-                                metaItem.getMeta_id(),
-                                metaItem.getMeta_name(),
-                                item.getOrd_id(),
-                                metaItem.getUpload_file_url(),
-                                item.getOrd_inv_at(),
-                                "invest_plus.convert"
-                        );
-                    }
-                }
+                logger.info("Code:"+ item.getOrd_code());
+                this.hopDongChuyenDoiMeta(item, token);
             }
             if (dataLists.size() > 0) {
-                logger.info("Offset"+ offSet);
+                logger.info("Offset:"+ offSet);
                 return runAll.equals("true") ? true : false;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
 
         return false;
+    }
+
+    public void hopDongChuyenDoiMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
+        try {
+            Gson gson = new Gson();
+            String orderItemString = CallApi.callGet(
+                    "https://apiinvplus.sunshinetech.com.vn/api/v2/order/GetOrderInfo?ord_id=" + item.getOrd_id(),
+                    token
+            );
+            OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
+            List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
+
+            // Get Meta
+            for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                    DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
+                    DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
+
+                    FileUtils.copyURLToFile(
+                            new URL(metaItem.getUpload_file_url()),
+                            new File(
+                                    filePath
+                                            + "Invest Plus" + "\\"
+                                            + "Hợp đồng chuyển đổi" + "\\"
+                                            + investDate.getYear() + "\\"
+                                            + investDate.getMonthOfYear() + "\\"
+                                            + investDate.getDayOfMonth() + "\\"
+                                            + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
+                                            + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getUpload_file_url(), metaItem.getOutput_filename())
+                            )
+                    );
+                    MysqlConnection.insertItem(
+                            metaItem.getMeta_id(),
+                            metaItem.getMeta_name(),
+                            item.getOrd_id(),
+                            metaItem.getUpload_file_url(),
+                            item.getOrd_inv_at(),
+                            "invest_plus.convert",
+                            item.getOrd_code()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e);
+        }
     }
 
 }

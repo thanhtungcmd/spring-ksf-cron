@@ -57,7 +57,7 @@ public class InvestOrderContract {
                 offSet = offSet + pageSize;
             } while (isLoop);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -71,58 +71,68 @@ public class InvestOrderContract {
             );
             Gson gson = new Gson();
             OrderList orderList = gson.fromJson(orderListStr, OrderList.class);
-            logger.info("orderList:" + orderList);
 
             // Get Detail
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                String orderItemString = CallApi.callGet(
-                        "https://apiinvest.sunshinetech.com.vn/api/v2/order/GetOrderInfo?action=View&ord_id=" + item.getOrd_id(),
-                        token
-                );
-                OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
-                List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
-
-                // Get Meta
-                for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                    if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
-                        DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                        DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
-
-                        FileUtils.copyURLToFile(
-                                new URL(metaItem.getMeta_file_id_2b()),
-                                new File(
-                                        filePath
-                                                + "Invest" + "\\"
-                                                + investDate.getYear() + "\\"
-                                                + investDate.getMonthOfYear() + "\\"
-                                                + investDate.getDayOfMonth() + "\\"
-                                                + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
-                                                + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getMeta_file_id_2b(), metaItem.getOutput_filename())
-                                )
-                        );
-                        MysqlConnection.insertItem(
-                                metaItem.getMeta_id(),
-                                metaItem.getMeta_name(),
-                                item.getOrd_id(),
-                                metaItem.getMeta_file_id_2b(),
-                                item.getOrd_inv_at(),
-                                "invest"
-                        );
-                    }
-                }
+                logger.info("Code:"+ item.getOrd_code());
+                this.execMeta(item, token);
             }
 
             if (dataLists.size() > 0) {
-                logger.info("Offset"+ offSet);
+                logger.info("Offset:"+ offSet);
                 return runAll.equals("true") ? true : false;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
 
         return false;
+    }
+
+    public void execMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
+        try {
+            Gson gson = new Gson();
+            String orderItemString = CallApi.callGet(
+                    "https://apiinvest.sunshinetech.com.vn/api/v2/order/GetOrderInfo?action=View&ord_id=" + item.getOrd_id(),
+                    token
+            );
+            OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
+            List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
+
+            // Get Meta
+            for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                    DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
+                    DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
+
+                    FileUtils.copyURLToFile(
+                            new URL(metaItem.getMeta_file_id_2b()),
+                            new File(
+                                    filePath
+                                            + "Invest" + "\\"
+                                            + investDate.getYear() + "\\"
+                                            + investDate.getMonthOfYear() + "\\"
+                                            + investDate.getDayOfMonth() + "\\"
+                                            + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
+                                            + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getMeta_file_id_2b(), metaItem.getOutput_filename())
+                            )
+                    );
+                    MysqlConnection.insertItem(
+                            metaItem.getMeta_id(),
+                            metaItem.getMeta_name(),
+                            item.getOrd_id(),
+                            metaItem.getMeta_file_id_2b(),
+                            item.getOrd_inv_at(),
+                            "invest",
+                            item.getOrd_code()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e);
+        }
     }
 
 }

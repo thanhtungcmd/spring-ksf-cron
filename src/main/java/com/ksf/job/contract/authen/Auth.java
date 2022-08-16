@@ -26,8 +26,8 @@ public class Auth {
             prop.load(fis);
             username = prop.getProperty("auth.username");
             password = prop.getProperty("auth.password");
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error(e);
         }
     }
 
@@ -51,7 +51,7 @@ public class Auth {
             driver.close();
             return token;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
 
         return null;

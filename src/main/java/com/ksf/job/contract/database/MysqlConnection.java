@@ -29,8 +29,8 @@ public class MysqlConnection {
             connection = prop.getProperty("mysql.connection");
             user = prop.getProperty("mysql.user");
             password = prop.getProperty("mysql.password");
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error(e);
         }
     }
 
@@ -73,31 +73,30 @@ public class MysqlConnection {
             }
             return false;
         } catch(SQLException e){
-            logger.info("Query error.");
+            logger.error(e);
         } finally {
             closeConnection();
         }
         return false;
     }
 
-    public static void insertItem(Long metaId, String metaName, Long orderId, String urlDownload, String investDate, String type){
+    public static void insertItem(Long metaId, String metaName, Long orderId, String urlDownload, String investDate, String type, String orderCode){
         try {
             loadProperty();
             mysqlConnect();
             //using PreparedStatement
-            pstate = con.prepareStatement("insert into tbl_metas(meta_id, meta_name, order_id, url_download, invest_date, type)"+
-                    "values(?,?,?,?,?,?)");
+            pstate = con.prepareStatement("insert into tbl_metas(meta_id, meta_name, order_id, url_download, invest_date, type, order_code)"+
+                    "values(?,?,?,?,?,?,?)");
             pstate.setLong(1, metaId);
             pstate.setString(2, metaName);
             pstate.setLong(3, orderId);
             pstate.setString(4, urlDownload);
             pstate.setString(5, investDate);
             pstate.setString(6, type);
+            pstate.setString(7, orderCode);
             int value = pstate.executeUpdate();
-
-            logger.info("OK, 1 row "+ metaId);
         } catch(SQLException e){
-            logger.info("Query error.");
+            logger.error(e);
         } finally {
             closeConnection();
         }

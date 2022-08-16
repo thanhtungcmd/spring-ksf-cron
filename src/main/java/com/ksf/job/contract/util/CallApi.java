@@ -25,7 +25,7 @@ public class CallApi {
             String response = executeVht.body().string();
             return response;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
         return null;
     }
@@ -53,7 +53,7 @@ public class CallApi {
             }
             return false;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
         return false;
     }
@@ -80,7 +80,7 @@ public class CallApi {
             }
             return false;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
         return false;
     }*/

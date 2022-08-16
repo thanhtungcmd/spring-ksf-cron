@@ -10,17 +10,14 @@ import com.ksf.job.contract.order.InvestPlusRenderContract;
 public class Main {
 
     public static void main(String[] args) {
-        /*InvestOrderContract investOrderContract = new InvestOrderContract();
-        investOrderContract.execAll();*/
+        InvestOrderContract investOrderContract = new InvestOrderContract();
+        investOrderContract.execAll();
 
         InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
         investPlusOrderContract.execAll();
 
-        /*BondOrderContract bondOrderContract = new BondOrderContract();
-        bondOrderContract.exec();*/
-
-        /*InvestPlusRenderContract investPlusRenderContract = new InvestPlusRenderContract();
-        investPlusRenderContract.exec();*/
+        BondOrderContract bondOrderContract = new BondOrderContract();
+        bondOrderContract.execAll();
     }
 
 }
