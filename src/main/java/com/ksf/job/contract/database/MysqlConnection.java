@@ -31,6 +31,7 @@ public class MysqlConnection {
             password = prop.getProperty("mysql.password");
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -42,9 +43,11 @@ public class MysqlConnection {
         }
         catch(ClassNotFoundException e){
             logger.info("Couldn't load driver.");
+            e.printStackTrace();
         }
         catch(SQLException e){
             logger.info("Couldn't connect to database.");
+            e.printStackTrace();
         }
     }
 
@@ -56,9 +59,11 @@ public class MysqlConnection {
         }
         catch(NullPointerException e){
             logger.info("Couldn't load driver.");
+            e.printStackTrace();
         }
         catch(SQLException e){
             logger.info("Couldn't close database.");
+            e.printStackTrace();
         }
     }
 
@@ -74,6 +79,7 @@ public class MysqlConnection {
             return false;
         } catch(SQLException e){
             logger.error(e);
+            e.printStackTrace();
         } finally {
             closeConnection();
         }
@@ -97,6 +103,7 @@ public class MysqlConnection {
             int value = pstate.executeUpdate();
         } catch(SQLException e){
             logger.error(e);
+            e.printStackTrace();
         } finally {
             closeConnection();
         }

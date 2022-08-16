@@ -28,6 +28,7 @@ public class Auth {
             password = prop.getProperty("auth.password");
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -52,6 +53,7 @@ public class Auth {
             return token;
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
 
         return null;

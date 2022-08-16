@@ -40,6 +40,7 @@ public class BondOrderContract {
             runAll = prop.getProperty("run_all");
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -58,6 +59,7 @@ public class BondOrderContract {
             } while (isLoop);
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -85,6 +87,7 @@ public class BondOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
 
         return false;
@@ -131,6 +134,7 @@ public class BondOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 

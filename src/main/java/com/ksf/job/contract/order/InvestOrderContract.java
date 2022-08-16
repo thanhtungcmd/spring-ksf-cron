@@ -58,6 +58,7 @@ public class InvestOrderContract {
             } while (isLoop);
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -86,6 +87,7 @@ public class InvestOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
 
         return false;
@@ -132,6 +134,7 @@ public class InvestOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 

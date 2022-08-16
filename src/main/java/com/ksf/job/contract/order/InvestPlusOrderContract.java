@@ -40,6 +40,7 @@ public class InvestPlusOrderContract {
             runAll = prop.getProperty("run_all");
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -58,6 +59,7 @@ public class InvestPlusOrderContract {
             } while (isLoop);
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -71,6 +73,7 @@ public class InvestPlusOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
         return false;
     }
@@ -145,6 +148,7 @@ public class InvestPlusOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -171,6 +175,7 @@ public class InvestPlusOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
 
         return false;
@@ -218,6 +223,7 @@ public class InvestPlusOrderContract {
             }
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
     }
 

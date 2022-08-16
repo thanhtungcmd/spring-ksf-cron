@@ -19,6 +19,7 @@ public class Util {
             return "."+ filename;
         } catch (Exception e) {
             logger.error(e);
+            e.printStackTrace();
         }
         return ".pdf";
     }
