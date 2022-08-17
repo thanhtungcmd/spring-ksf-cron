@@ -20,7 +20,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-public class BondOrderContract {
+public class BondOrderContract extends Thread {
 
     private final Logger logger = LogManager.getLogger();
 
@@ -38,6 +38,15 @@ public class BondOrderContract {
             offSet = Long.parseLong(prop.getProperty("bond.offset"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
+        } catch (Exception e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        try {
+            execAll();
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -105,7 +114,7 @@ public class BondOrderContract {
 
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "bond", item.getSoi_code())) {
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getSoi_begin_at());
 

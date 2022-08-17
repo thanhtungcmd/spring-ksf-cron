@@ -20,7 +20,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-public class InvestOrderContract {
+public class InvestOrderContract extends Thread {
 
     private final Logger logger = LogManager.getLogger();
 
@@ -38,8 +38,18 @@ public class InvestOrderContract {
             offSet = Long.parseLong(prop.getProperty("invest.offset"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        try {
+            execAll();
+        } catch (Exception e) {
+            logger.error(e);
+            e.printStackTrace();
         }
     }
 
@@ -105,7 +115,7 @@ public class InvestOrderContract {
 
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest", item.getOrd_code())) {
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 

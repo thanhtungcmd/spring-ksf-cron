@@ -41,6 +41,7 @@ public class Auth {
             Thread.sleep(1000);
             driver.findElement(By.xpath("//*[@id=\"Username\"]")).sendKeys(username);
             driver.findElement(By.xpath("//*[@id=\"Password\"]")).sendKeys(password);
+            driver.findElement(By.xpath("//*[@id=\"RememberLogin\"]")).click();
             driver.findElement(By.xpath("/html/body/div[2]/div/div[2]/div/div[1]/section/form/div[5]/div/button")).click();
 
             Thread.sleep(1000);

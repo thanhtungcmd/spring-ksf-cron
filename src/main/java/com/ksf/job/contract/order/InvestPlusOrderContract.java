@@ -20,7 +20,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-public class InvestPlusOrderContract {
+public class InvestPlusOrderContract extends Thread {
 
     private final Logger logger = LogManager.getLogger();
 
@@ -38,6 +38,15 @@ public class InvestPlusOrderContract {
             offSet = Long.parseLong(prop.getProperty("invest_plus.offset"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
+        } catch (Exception e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        try {
+            execAll();
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -118,7 +127,7 @@ public class InvestPlusOrderContract {
 
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest_plus.normal", item.getOrd_code())) {
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 
@@ -193,7 +202,7 @@ public class InvestPlusOrderContract {
 
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id())) {
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest_plus.convert", item.getOrd_code())) {
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 

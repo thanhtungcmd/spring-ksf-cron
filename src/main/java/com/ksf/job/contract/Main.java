@@ -11,13 +11,13 @@ public class Main {
 
     public static void main(String[] args) {
         InvestOrderContract investOrderContract = new InvestOrderContract();
-        investOrderContract.execAll();
+        investOrderContract.start();
 
         InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
-        investPlusOrderContract.execAll();
+        investPlusOrderContract.start();
 
         BondOrderContract bondOrderContract = new BondOrderContract();
-        bondOrderContract.execAll();
+        bondOrderContract.start();
     }
 
 }

@@ -67,12 +67,12 @@ public class MysqlConnection {
         }
     }
 
-    public static boolean checkExist(Long metaId) {
+    public static boolean checkExist(Long metaId, String type, String orderCode) {
         try {
             loadProperty();
             mysqlConnect();
             state = con.createStatement();
-            result = state.executeQuery("select * from tbl_metas where meta_id = "+ metaId);
+            result = state.executeQuery("select * from tbl_metas where order_code = '"+ orderCode +"' and type = '"+ type +"' and meta_id = "+ metaId);
             while(result.next()){
                 return true;
             }
