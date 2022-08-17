@@ -18,27 +18,24 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
+import java.util.Queue;
 
 public class InvestThread extends Thread {
 
     private final Logger logger = LogManager.getLogger();
 
-    private Long pageSize;
-    private Long offSet;
     private static String filePath;
-    private static String runAll;
     private String token;
+    private Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queue;
 
-    public InvestThread(String token, Long offSet, Long pageSize) {
+    public InvestThread(Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queue, String token) {
         Properties prop = new Properties();
         String fileName = "app.cfg";
         try (FileInputStream fis = new FileInputStream(fileName)) {
             prop.load(fis);
             filePath = prop.getProperty("file_path");
-            runAll = prop.getProperty("run_all");
             this.token = token;
-            this.offSet = offSet;
-            this.pageSize = pageSize;
+            this.queue = queue;
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -48,41 +45,14 @@ public class InvestThread extends Thread {
     @Override
     public void run() {
         try {
-            exec(this.token);
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
-    }
-
-    public boolean exec(String token) {
-        try {
-
-            // Get List
-            String orderListStr = CallApi.callGet(
-                    "https://apiinvest.sunshinetech.com.vn/api/v2/order/GetOrderPage?branch_type=2&filter=&gridWidth=1217&offSet="+this.offSet.toString()+"&open_id=-1&ord_st=-1&pageSize="+this.pageSize.toString()+"&prod_id=-1&type_data=1&work_st=-1",
-                    token
-            );
-            Gson gson = new Gson();
-            OrderList orderList = gson.fromJson(orderListStr, OrderList.class);
-
-            // Get Detail
-            List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
-
-            for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                this.execMeta(item, token);
-            }
-
-            if (dataLists.size() > 0) {
-                logger.info("Offset:"+ offSet);
-                return runAll.equals("true") ? true : false;
+            OrderList.OrderListData.OrderListDataList.OrderListDataListItem item;
+            while ((item = this.queue.poll()) != null) {
+                execMeta(item, this.token);
             }
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
         }
-
-        return false;
     }
 
     public void execMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
@@ -98,7 +68,7 @@ public class InvestThread extends Thread {
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
                 if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest", item.getOrd_code())) {
-                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
+                    logger.info("Code:"+ item.getOrd_code() + "; Meta:"+ metaItem.getMeta_id() + "; Date:"+ item.getOrd_inv_at());
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 

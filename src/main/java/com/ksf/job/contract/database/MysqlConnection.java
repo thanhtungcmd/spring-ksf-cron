@@ -67,7 +67,7 @@ public class MysqlConnection {
         }
     }
 
-    public static boolean checkExist(Long metaId, String type, String orderCode) {
+    public synchronized static boolean checkExist(Long metaId, String type, String orderCode) {
         try {
             loadProperty();
             mysqlConnect();
@@ -86,7 +86,7 @@ public class MysqlConnection {
         return false;
     }
 
-    public static void insertItem(Long metaId, String metaName, Long orderId, String urlDownload, String investDate, String type, String orderCode){
+    public synchronized static void insertItem(Long metaId, String metaName, Long orderId, String urlDownload, String investDate, String type, String orderCode){
         try {
             loadProperty();
             mysqlConnect();

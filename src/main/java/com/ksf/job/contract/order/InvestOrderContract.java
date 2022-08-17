@@ -20,6 +20,8 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class InvestOrderContract extends Thread {
 
@@ -30,6 +32,7 @@ public class InvestOrderContract extends Thread {
     private static String filePath;
     private static String runAll;
     private static Long numberThread;
+    public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueTransaction = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
 
     public InvestOrderContract() {
         Properties prop = new Properties();
@@ -63,15 +66,11 @@ public class InvestOrderContract extends Thread {
                 "oidc.user:https://api.sunshinegroup.vn:5000:web_ks_invest_prod"
         );
 
-        boolean isLoop = true;
+        boolean isLoop;
         try {
             do {
-                for (int i = 0; i < numberThread; i++) {
-                    InvestThread investThread = new InvestThread(token, offSet, pageSize);
-                    investThread.start();
-                    offSet = offSet + pageSize;
-                    Thread.sleep(1000);
-                }
+                isLoop = this.exec(token);
+                offSet = offSet + pageSize;
             } while (isLoop);
 
         } catch (Exception e) {
@@ -82,7 +81,6 @@ public class InvestOrderContract extends Thread {
 
     public boolean exec(String token) {
         try {
-
             // Get List
             String orderListStr = CallApi.callGet(
                     "https://apiinvest.sunshinetech.com.vn/api/v2/order/GetOrderPage?branch_type=2&filter=&gridWidth=1217&offSet="+offSet.toString()+"&open_id=-1&ord_st=-1&pageSize="+pageSize.toString()+"&prod_id=-1&type_data=1&work_st=-1",
@@ -95,7 +93,16 @@ public class InvestOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                this.execMeta(item, token);
+                this.queueTransaction.add(item);
+            }
+
+            for (int i = 0; i < numberThread; i++) {
+                InvestThread investThread = new InvestThread(queueTransaction, token);
+                investThread.start();
+            }
+            while (this.queueTransaction.size() > 0) {
+                Thread.sleep(1000);
+                logger.info("queueSize:" + this.queueTransaction.size());
             }
 
             if (dataLists.size() > 0) {

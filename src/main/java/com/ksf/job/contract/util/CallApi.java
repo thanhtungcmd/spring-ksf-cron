@@ -1,19 +1,19 @@
 package com.ksf.job.contract.util;
 
-import com.google.gson.Gson;
-import okhttp3.*;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.TimeUnit;
 
 public class CallApi {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public synchronized static String callGet(String url, String token) {
+    public static String callGet(String url, String token) {
         try {
             OkHttpClient client = new OkHttpClient.Builder().build();
+            //logger.info("Request:" + url);
 
             Request requestVHT = new Request.Builder()
                     .url(url)
@@ -23,6 +23,7 @@ public class CallApi {
                     .build();
             Response executeVht = client.newCall(requestVHT).execute();
             String response = executeVht.body().string();
+            //logger.info("Response:" + response);
             return response;
         } catch (Exception e) {
             logger.error(e);
