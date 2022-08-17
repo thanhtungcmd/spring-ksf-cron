@@ -13,11 +13,11 @@ public class Main {
         InvestOrderContract investOrderContract = new InvestOrderContract();
         investOrderContract.start();
 
-        InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
+        /*InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
         investPlusOrderContract.start();
 
         BondOrderContract bondOrderContract = new BondOrderContract();
-        bondOrderContract.start();
+        bondOrderContract.start();*/
     }
 
 }

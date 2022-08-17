@@ -1,7 +1,6 @@
-package com.ksf.job.contract.order;
+package com.ksf.job.contract.thread;
 
 import com.google.gson.Gson;
-import com.ksf.job.contract.authen.Auth;
 import com.ksf.job.contract.database.MysqlConnection;
 import com.ksf.job.contract.dto.OrderItem;
 import com.ksf.job.contract.dto.OrderList;
@@ -20,52 +19,36 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-public class BondOrderContract extends Thread {
+public class InvestThread extends Thread {
 
     private final Logger logger = LogManager.getLogger();
 
-    private static Long pageSize;
-    private static Long offSet;
+    private Long pageSize;
+    private Long offSet;
     private static String filePath;
     private static String runAll;
+    private String token;
 
-    public BondOrderContract() {
+    public InvestThread(String token, Long offSet, Long pageSize) {
         Properties prop = new Properties();
         String fileName = "app.cfg";
         try (FileInputStream fis = new FileInputStream(fileName)) {
             prop.load(fis);
-            pageSize = Long.parseLong(prop.getProperty("bond.page_size"));
-            offSet = Long.parseLong(prop.getProperty("bond.offset"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
+            this.token = token;
+            this.offSet = offSet;
+            this.pageSize = pageSize;
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
         }
     }
 
+    @Override
     public void run() {
         try {
-            execAll();
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
-    }
-
-    public void execAll() {
-        Auth auth = new Auth();
-        String token = auth.exec(
-                "https://ks-bond.ksfinance.net/",
-                "oidc.user:https://api.sunshinegroup.vn:5000:web_s_sipt_prod"
-        );
-
-        boolean isLoop;
-        try {
-            do {
-                isLoop = this.exec(token);
-                offSet = offSet + pageSize;
-            } while (isLoop);
+            exec(this.token);
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -74,9 +57,10 @@ public class BondOrderContract extends Thread {
 
     public boolean exec(String token) {
         try {
+
             // Get List
             String orderListStr = CallApi.callGet(
-                    "https://apibond.sunshinetech.com.vn/api/v1/order/GetOrderPage?branch_type=2&filter=&gridWidth=0&offSet="+ offSet.toString() +"&open_id=-1&pageSize="+ pageSize.toString() +"&prod_id=-1&work_st=-1",
+                    "https://apiinvest.sunshinetech.com.vn/api/v2/order/GetOrderPage?branch_type=2&filter=&gridWidth=1217&offSet="+this.offSet.toString()+"&open_id=-1&ord_st=-1&pageSize="+this.pageSize.toString()+"&prod_id=-1&type_data=1&work_st=-1",
                     token
             );
             Gson gson = new Gson();
@@ -86,7 +70,7 @@ public class BondOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                this.getMeta(item, token);
+                this.execMeta(item, token);
             }
 
             if (dataLists.size() > 0) {
@@ -101,11 +85,11 @@ public class BondOrderContract extends Thread {
         return false;
     }
 
-    public void getMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
+    public void execMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
         try {
             Gson gson = new Gson();
             String orderItemString = CallApi.callGet(
-                    "https://apibond.sunshinetech.com.vn/api/v1/order/GetOrderInfo?soi_id=" + item.getSoi_id(),
+                    "https://apiinvest.sunshinetech.com.vn/api/v2/order/GetOrderInfo?action=View&ord_id=" + item.getOrd_id(),
                     token
             );
             OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
@@ -113,31 +97,31 @@ public class BondOrderContract extends Thread {
 
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "bond", item.getSoi_code())) {
-                    logger.info("Code:"+ item.getSoi_code() +" ;Meta:"+ metaItem.getMeta_id());
+                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest", item.getOrd_code())) {
+                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                    DateTime investDate = dtf.parseDateTime(item.getSoi_begin_at());
+                    DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 
                     FileUtils.copyURLToFile(
-                            new URL(metaItem.getTemp_view_url()),
+                            new URL(metaItem.getMeta_file_id_2b()),
                             new File(
                                     filePath
-                                            + "Bond" + "\\"
+                                            + "Invest" + "\\"
                                             + investDate.getYear() + "\\"
                                             + investDate.getMonthOfYear() + "\\"
                                             + investDate.getDayOfMonth() + "\\"
-                                            + item.getBuy_fullname() + "-" + item.getSoi_code() + "\\"
-                                            + metaItem.getMeta_title() + Util.getOriginalName(metaItem.getTemp_view_url(), metaItem.getOutput_filename())
+                                            + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
+                                            + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getMeta_file_id_2b(), metaItem.getOutput_filename())
                             )
                     );
                     MysqlConnection.insertItem(
                             metaItem.getMeta_id(),
-                            metaItem.getMeta_title(),
-                            item.getSoi_id(),
-                            metaItem.getTemp_view_url(),
-                            item.getSoi_begin_at(),
-                            "bond",
-                            item.getSoi_code()
+                            metaItem.getMeta_name(),
+                            item.getOrd_id(),
+                            metaItem.getMeta_file_id_2b(),
+                            item.getOrd_inv_at(),
+                            "invest",
+                            item.getOrd_code()
                     );
                 }
             }

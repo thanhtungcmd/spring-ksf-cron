@@ -5,6 +5,7 @@ import com.ksf.job.contract.authen.Auth;
 import com.ksf.job.contract.database.MysqlConnection;
 import com.ksf.job.contract.dto.OrderItem;
 import com.ksf.job.contract.dto.OrderList;
+import com.ksf.job.contract.thread.InvestThread;
 import com.ksf.job.contract.util.CallApi;
 import com.ksf.job.contract.util.Util;
 import org.apache.commons.io.FileUtils;
@@ -28,6 +29,7 @@ public class InvestOrderContract extends Thread {
     private static Long offSet;
     private static String filePath;
     private static String runAll;
+    private static Long numberThread;
 
     public InvestOrderContract() {
         Properties prop = new Properties();
@@ -36,6 +38,7 @@ public class InvestOrderContract extends Thread {
             prop.load(fis);
             pageSize = Long.parseLong(prop.getProperty("invest.page_size"));
             offSet = Long.parseLong(prop.getProperty("invest.offset"));
+            numberThread = Long.parseLong(prop.getProperty("invest.number_thread"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
         } catch (Exception e) {
@@ -60,12 +63,17 @@ public class InvestOrderContract extends Thread {
                 "oidc.user:https://api.sunshinegroup.vn:5000:web_ks_invest_prod"
         );
 
-        boolean isLoop;
+        boolean isLoop = true;
         try {
             do {
-                isLoop = this.exec(token);
-                offSet = offSet + pageSize;
+                for (int i = 0; i < numberThread; i++) {
+                    InvestThread investThread = new InvestThread(token, offSet, pageSize);
+                    investThread.start();
+                    offSet = offSet + pageSize;
+                    Thread.sleep(1000);
+                }
             } while (isLoop);
+
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -87,7 +95,6 @@ public class InvestOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                logger.info("Code:"+ item.getOrd_code());
                 this.execMeta(item, token);
             }
 
@@ -116,6 +123,7 @@ public class InvestOrderContract extends Thread {
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
                 if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest", item.getOrd_code())) {
+                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 

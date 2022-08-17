@@ -11,7 +11,7 @@ public class CallApi {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static String callGet(String url, String token) {
+    public synchronized static String callGet(String url, String token) {
         try {
             OkHttpClient client = new OkHttpClient.Builder().build();
 

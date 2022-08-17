@@ -101,7 +101,6 @@ public class InvestPlusOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                logger.info("Code:"+ item.getOrd_code());
                 this.hopDongDatMuaMeta(item, token);
             }
             if (dataLists.size() > 0) {
@@ -128,6 +127,7 @@ public class InvestPlusOrderContract extends Thread {
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
                 if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest_plus.normal", item.getOrd_code())) {
+                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 
@@ -175,7 +175,6 @@ public class InvestPlusOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                logger.info("Code:"+ item.getOrd_code());
                 this.hopDongChuyenDoiMeta(item, token);
             }
             if (dataLists.size() > 0) {
@@ -203,6 +202,7 @@ public class InvestPlusOrderContract extends Thread {
             // Get Meta
             for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
                 if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest_plus.convert", item.getOrd_code())) {
+                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
                     DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
                     DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
 
