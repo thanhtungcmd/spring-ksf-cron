@@ -5,6 +5,8 @@ import com.ksf.job.contract.authen.Auth;
 import com.ksf.job.contract.database.MysqlConnection;
 import com.ksf.job.contract.dto.OrderItem;
 import com.ksf.job.contract.dto.OrderList;
+import com.ksf.job.contract.thread.BondThread;
+import com.ksf.job.contract.thread.InvestThread;
 import com.ksf.job.contract.util.CallApi;
 import com.ksf.job.contract.util.Util;
 import org.apache.commons.io.FileUtils;
@@ -19,6 +21,8 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class BondOrderContract extends Thread {
 
@@ -28,6 +32,8 @@ public class BondOrderContract extends Thread {
     private static Long offSet;
     private static String filePath;
     private static String runAll;
+    private static Long numberThread;
+    public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueTransaction = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
 
     public BondOrderContract() {
         Properties prop = new Properties();
@@ -36,6 +42,7 @@ public class BondOrderContract extends Thread {
             prop.load(fis);
             pageSize = Long.parseLong(prop.getProperty("bond.page_size"));
             offSet = Long.parseLong(prop.getProperty("bond.offset"));
+            numberThread = Long.parseLong(prop.getProperty("bond.number_thread"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
         } catch (Exception e) {
@@ -86,7 +93,15 @@ public class BondOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                this.getMeta(item, token);
+                this.queueTransaction.add(item);
+            }
+            for (int i = 0; i < numberThread; i++) {
+                BondThread bondThread = new BondThread(queueTransaction, token);
+                bondThread.start();
+            }
+            while (this.queueTransaction.size() > 0) {
+                Thread.sleep(1000);
+                logger.info("queueSize:" + this.queueTransaction.size());
             }
 
             if (dataLists.size() > 0) {
@@ -99,52 +114,6 @@ public class BondOrderContract extends Thread {
         }
 
         return false;
-    }
-
-    public void getMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
-        try {
-            Gson gson = new Gson();
-            String orderItemString = CallApi.callGet(
-                    "https://apibond.sunshinetech.com.vn/api/v1/order/GetOrderInfo?soi_id=" + item.getSoi_id(),
-                    token
-            );
-            OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
-            List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
-
-            // Get Meta
-            for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "bond", item.getSoi_code())) {
-                    logger.info("Code:"+ item.getSoi_code() +" ;Meta:"+ metaItem.getMeta_id());
-                    DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                    DateTime investDate = dtf.parseDateTime(item.getSoi_begin_at());
-
-                    FileUtils.copyURLToFile(
-                            new URL(metaItem.getTemp_view_url()),
-                            new File(
-                                    filePath
-                                            + "Bond" + "\\"
-                                            + investDate.getYear() + "\\"
-                                            + investDate.getMonthOfYear() + "\\"
-                                            + investDate.getDayOfMonth() + "\\"
-                                            + item.getBuy_fullname() + "-" + item.getSoi_code() + "\\"
-                                            + metaItem.getMeta_title() + Util.getOriginalName(metaItem.getTemp_view_url(), metaItem.getOutput_filename())
-                            )
-                    );
-                    MysqlConnection.insertItem(
-                            metaItem.getMeta_id(),
-                            metaItem.getMeta_title(),
-                            item.getSoi_id(),
-                            metaItem.getTemp_view_url(),
-                            item.getSoi_begin_at(),
-                            "bond",
-                            item.getSoi_code()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
     }
 
 }

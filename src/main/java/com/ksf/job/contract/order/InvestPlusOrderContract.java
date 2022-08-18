@@ -5,6 +5,8 @@ import com.ksf.job.contract.authen.Auth;
 import com.ksf.job.contract.database.MysqlConnection;
 import com.ksf.job.contract.dto.OrderItem;
 import com.ksf.job.contract.dto.OrderList;
+import com.ksf.job.contract.thread.InvestPlusDatMuaThread;
+import com.ksf.job.contract.thread.InvestThread;
 import com.ksf.job.contract.util.CallApi;
 import com.ksf.job.contract.util.Util;
 import org.apache.commons.io.FileUtils;
@@ -19,6 +21,8 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class InvestPlusOrderContract extends Thread {
 
@@ -28,6 +32,9 @@ public class InvestPlusOrderContract extends Thread {
     private static Long offSet;
     private static String filePath;
     private static String runAll;
+    private static Long numberThread;
+    public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueDatMua = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
+    public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueChuyenDoi = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
 
     public InvestPlusOrderContract() {
         Properties prop = new Properties();
@@ -36,6 +43,7 @@ public class InvestPlusOrderContract extends Thread {
             prop.load(fis);
             pageSize = Long.parseLong(prop.getProperty("invest_plus.page_size"));
             offSet = Long.parseLong(prop.getProperty("invest_plus.offset"));
+            numberThread = Long.parseLong(prop.getProperty("invest_plus.number_thread"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
         } catch (Exception e) {
@@ -101,7 +109,16 @@ public class InvestPlusOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                this.hopDongDatMuaMeta(item, token);
+                this.queueDatMua.add(item);
+
+            }
+            for (int i = 0; i < numberThread; i++) {
+                InvestPlusDatMuaThread investThread = new InvestPlusDatMuaThread(queueDatMua, token);
+                investThread.start();
+            }
+            while (this.queueDatMua.size() > 0) {
+                Thread.sleep(1000);
+                logger.info("queueSize:" + this.queueDatMua.size());
             }
             if (dataLists.size() > 0) {
                 logger.info("Offset:"+ offSet);
@@ -114,52 +131,7 @@ public class InvestPlusOrderContract extends Thread {
         return false;
     }
 
-    public void hopDongDatMuaMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
-        try {
-            Gson gson = new Gson();
-            String orderItemString = CallApi.callGet(
-                    "https://apiinvplus.sunshinetech.com.vn/api/v2/order/GetOrderInfo?ord_id=" + item.getOrd_id(),
-                    token
-            );
-            OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
-            List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
 
-            // Get Meta
-            for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest_plus.normal", item.getOrd_code())) {
-                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
-                    DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                    DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
-
-                    FileUtils.copyURLToFile(
-                            new URL(metaItem.getUpload_file_url()),
-                            new File(
-                                    filePath
-                                            + "Invest Plus" + "\\"
-                                            + "Hợp đồng đặt mua" + "\\"
-                                            + investDate.getYear() + "\\"
-                                            + investDate.getMonthOfYear() + "\\"
-                                            + investDate.getDayOfMonth() + "\\"
-                                            + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
-                                            + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getUpload_file_url(), metaItem.getOutput_filename())
-                            )
-                    );
-                    MysqlConnection.insertItem(
-                            metaItem.getMeta_id(),
-                            metaItem.getMeta_name(),
-                            item.getOrd_id(),
-                            metaItem.getUpload_file_url(),
-                            item.getOrd_inv_at(),
-                            "invest_plus.normal",
-                            item.getOrd_code()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
-    }
 
     public boolean hopDongChuyenDoi(String token) {
         try {
@@ -175,7 +147,15 @@ public class InvestPlusOrderContract extends Thread {
             List<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> dataLists = orderList.getData().getDataList().getData();
 
             for (OrderList.OrderListData.OrderListDataList.OrderListDataListItem item : dataLists) {
-                this.hopDongChuyenDoiMeta(item, token);
+                this.queueChuyenDoi.add(item);
+            }
+            for (int i = 0; i < numberThread; i++) {
+                InvestPlusDatMuaThread investThread = new InvestPlusDatMuaThread(queueChuyenDoi, token);
+                investThread.start();
+            }
+            while (this.queueChuyenDoi.size() > 0) {
+                Thread.sleep(1000);
+                logger.info("queueSize:" + this.queueChuyenDoi.size());
             }
             if (dataLists.size() > 0) {
                 logger.info("Offset:"+ offSet);
@@ -187,53 +167,6 @@ public class InvestPlusOrderContract extends Thread {
         }
 
         return false;
-    }
-
-    public void hopDongChuyenDoiMeta(OrderList.OrderListData.OrderListDataList.OrderListDataListItem item, String token) {
-        try {
-            Gson gson = new Gson();
-            String orderItemString = CallApi.callGet(
-                    "https://apiinvplus.sunshinetech.com.vn/api/v2/order/GetOrderInfo?ord_id=" + item.getOrd_id(),
-                    token
-            );
-            OrderItem orderItem = gson.fromJson(orderItemString, OrderItem.class);
-            List<OrderItem.OrderItemData.OrderItemMeta> metaList = orderItem.getData().getOrd_metas();
-
-            // Get Meta
-            for (OrderItem.OrderItemData.OrderItemMeta metaItem : metaList) {
-                if (!MysqlConnection.checkExist(metaItem.getMeta_id(), "invest_plus.convert", item.getOrd_code())) {
-                    logger.info("Code:"+ item.getOrd_code() +" ;Meta:"+ metaItem.getMeta_id());
-                    DateTimeFormatter dtf = DateTimeFormat.forPattern("dd/MM/yyyy");
-                    DateTime investDate = dtf.parseDateTime(item.getOrd_inv_at());
-
-                    FileUtils.copyURLToFile(
-                            new URL(metaItem.getUpload_file_url()),
-                            new File(
-                                    filePath
-                                            + "Invest Plus" + "\\"
-                                            + "Hợp đồng chuyển đổi" + "\\"
-                                            + investDate.getYear() + "\\"
-                                            + investDate.getMonthOfYear() + "\\"
-                                            + investDate.getDayOfMonth() + "\\"
-                                            + item.getBuyer_fullname() + "-" + item.getOrd_code() + "\\"
-                                            + metaItem.getMeta_name() + Util.getOriginalName(metaItem.getUpload_file_url(), metaItem.getOutput_filename())
-                            )
-                    );
-                    MysqlConnection.insertItem(
-                            metaItem.getMeta_id(),
-                            metaItem.getMeta_name(),
-                            item.getOrd_id(),
-                            metaItem.getUpload_file_url(),
-                            item.getOrd_inv_at(),
-                            "invest_plus.convert",
-                            item.getOrd_code()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
-        }
     }
 
 }
