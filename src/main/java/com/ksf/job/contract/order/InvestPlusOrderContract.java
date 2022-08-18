@@ -2,23 +2,13 @@ package com.ksf.job.contract.order;
 
 import com.google.gson.Gson;
 import com.ksf.job.contract.authen.Auth;
-import com.ksf.job.contract.database.MysqlConnection;
-import com.ksf.job.contract.dto.OrderItem;
 import com.ksf.job.contract.dto.OrderList;
 import com.ksf.job.contract.thread.InvestPlusDatMuaThread;
-import com.ksf.job.contract.thread.InvestThread;
 import com.ksf.job.contract.util.CallApi;
-import com.ksf.job.contract.util.Util;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 import java.util.Queue;
@@ -33,6 +23,7 @@ public class InvestPlusOrderContract extends Thread {
     private static String filePath;
     private static String runAll;
     private static Long numberThread;
+    private static String enable;
     public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueDatMua = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
     public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueChuyenDoi = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
 
@@ -46,6 +37,7 @@ public class InvestPlusOrderContract extends Thread {
             numberThread = Long.parseLong(prop.getProperty("invest_plus.number_thread"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
+            enable = prop.getProperty("invest_plus.enable");
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -62,21 +54,23 @@ public class InvestPlusOrderContract extends Thread {
     }
 
     public void execAll() {
-        Auth auth = new Auth();
-        String token = auth.exec(
-                "https://ks-invplus.ksfinance.net/",
-                "oidc.user:https://api.sunshinegroup.vn:5000:web_k_invplus_prod"
-        );
+        if (enable.equals("true")) {
+            Auth auth = new Auth();
+            String token = auth.exec(
+                    "https://ks-invplus.ksfinance.net/",
+                    "oidc.user:https://api.sunshinegroup.vn:5000:web_k_invplus_prod"
+            );
 
-        boolean isLoop;
-        try {
-            do {
-                isLoop = this.exec(token);
-                offSet = offSet + pageSize;
-            } while (isLoop);
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
+            boolean isLoop;
+            try {
+                do {
+                    isLoop = this.exec(token);
+                    offSet = offSet + pageSize;
+                } while (isLoop);
+            } catch (Exception e) {
+                logger.error(e);
+                e.printStackTrace();
+            }
         }
     }
 
@@ -117,8 +111,8 @@ public class InvestPlusOrderContract extends Thread {
                 investThread.start();
             }
             while (this.queueDatMua.size() > 0) {
-                Thread.sleep(1000);
-                logger.info("queueSize:" + this.queueDatMua.size());
+                Thread.sleep(10000);
+                logger.info("queueSize DatMua:" + this.queueDatMua.size());
             }
             if (dataLists.size() > 0) {
                 logger.info("Offset:"+ offSet);
@@ -154,8 +148,8 @@ public class InvestPlusOrderContract extends Thread {
                 investThread.start();
             }
             while (this.queueChuyenDoi.size() > 0) {
-                Thread.sleep(1000);
-                logger.info("queueSize:" + this.queueChuyenDoi.size());
+                Thread.sleep(10000);
+                logger.info("queueSize ChuyenDoi:" + this.queueChuyenDoi.size());
             }
             if (dataLists.size() > 0) {
                 logger.info("Offset:"+ offSet);

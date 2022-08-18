@@ -2,23 +2,13 @@ package com.ksf.job.contract.order;
 
 import com.google.gson.Gson;
 import com.ksf.job.contract.authen.Auth;
-import com.ksf.job.contract.database.MysqlConnection;
-import com.ksf.job.contract.dto.OrderItem;
 import com.ksf.job.contract.dto.OrderList;
 import com.ksf.job.contract.thread.BondThread;
-import com.ksf.job.contract.thread.InvestThread;
 import com.ksf.job.contract.util.CallApi;
-import com.ksf.job.contract.util.Util;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 import java.util.Queue;
@@ -33,6 +23,7 @@ public class BondOrderContract extends Thread {
     private static String filePath;
     private static String runAll;
     private static Long numberThread;
+    private static String enable;
     public Queue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem> queueTransaction = new LinkedBlockingQueue<OrderList.OrderListData.OrderListDataList.OrderListDataListItem>();
 
     public BondOrderContract() {
@@ -45,6 +36,7 @@ public class BondOrderContract extends Thread {
             numberThread = Long.parseLong(prop.getProperty("bond.number_thread"));
             filePath = prop.getProperty("file_path");
             runAll = prop.getProperty("run_all");
+            enable = prop.getProperty("bond.enable");
         } catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
@@ -61,21 +53,23 @@ public class BondOrderContract extends Thread {
     }
 
     public void execAll() {
-        Auth auth = new Auth();
-        String token = auth.exec(
-                "https://ks-bond.ksfinance.net/",
-                "oidc.user:https://api.sunshinegroup.vn:5000:web_s_sipt_prod"
-        );
+        if (enable.equals("true")) {
+            Auth auth = new Auth();
+            String token = auth.exec(
+                    "https://ks-bond.ksfinance.net/",
+                    "oidc.user:https://api.sunshinegroup.vn:5000:web_s_sipt_prod"
+            );
 
-        boolean isLoop;
-        try {
-            do {
-                isLoop = this.exec(token);
-                offSet = offSet + pageSize;
-            } while (isLoop);
-        } catch (Exception e) {
-            logger.error(e);
-            e.printStackTrace();
+            boolean isLoop;
+            try {
+                do {
+                    isLoop = this.exec(token);
+                    offSet = offSet + pageSize;
+                } while (isLoop);
+            } catch (Exception e) {
+                logger.error(e);
+                e.printStackTrace();
+            }
         }
     }
 
@@ -100,7 +94,7 @@ public class BondOrderContract extends Thread {
                 bondThread.start();
             }
             while (this.queueTransaction.size() > 0) {
-                Thread.sleep(1000);
+                Thread.sleep(10000);
                 logger.info("queueSize:" + this.queueTransaction.size());
             }
 

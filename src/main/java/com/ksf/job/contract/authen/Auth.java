@@ -8,6 +8,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.FileInputStream;
 import java.util.Properties;
@@ -35,7 +36,10 @@ public class Auth {
     public String exec(String baseUrl, String session) {
         try {
             System.setProperty("webdriver.chrome.driver", "chromedriver.exe");
-            WebDriver driver = new ChromeDriver();
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("start-maximized");
+            options.setHeadless(true);
+            WebDriver driver = new ChromeDriver(options);
 
             driver.get(baseUrl);
             Thread.sleep(1000);
@@ -44,7 +48,7 @@ public class Auth {
             driver.findElement(By.xpath("//*[@id=\"RememberLogin\"]")).click();
             driver.findElement(By.xpath("/html/body/div[2]/div/div[2]/div/div[1]/section/form/div[5]/div/button")).click();
 
-            Thread.sleep(1000);
+            Thread.sleep(2000);
             JavascriptExecutor js = (JavascriptExecutor) driver;
             String sessionStorage = (String) js.executeScript("return sessionStorage.getItem('"+ session +"');");
             JsonObject jsonObject = new JsonParser().parse(sessionStorage).getAsJsonObject();

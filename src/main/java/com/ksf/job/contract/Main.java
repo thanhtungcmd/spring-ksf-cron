@@ -8,13 +8,13 @@ public class Main {
 
     public static void main(String[] args) {
         InvestOrderContract investOrderContract = new InvestOrderContract();
-        investOrderContract.start();
+        investOrderContract.execAll();
 
         InvestPlusOrderContract investPlusOrderContract = new InvestPlusOrderContract();
-        investPlusOrderContract.start();
+        investPlusOrderContract.execAll();
 
         BondOrderContract bondOrderContract = new BondOrderContract();
-        bondOrderContract.start();
+        bondOrderContract.execAll();
     }
 
 }

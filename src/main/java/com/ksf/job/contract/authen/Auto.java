@@ -26,6 +26,7 @@ public class Auto {
             System.setProperty("webdriver.chrome.driver", "chromedriver.exe");
             ChromeOptions options = new ChromeOptions();
             options.addArguments("start-maximized");
+            options.setHeadless(true);
             WebDriver driver = new ChromeDriver(options);
 
             driver.get("https://ks-invplus.ksfinance.net");
